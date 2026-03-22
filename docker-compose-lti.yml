@@ -1,0 +1,187 @@
+services:
+  # ============================================
+  # LTI Gateway 数据库 (PostgreSQL)
+  # ============================================
+  lti_gateway_db:
+    image: postgres:15-alpine
+    container_name: lti_gateway_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${LTI_DB_USER:-lti_gateway_user}
+      POSTGRES_PASSWORD: ${LTI_DB_PASSWORD:-lti_gateway_password_123}
+      POSTGRES_DB: ${LTI_DB_NAME:-lti_gateway}
+    volumes:
+      - lti_gateway_db_data:/var/lib/postgresql/data
+      - ./lti-gateway/docker/postgres/init:/docker-entrypoint-initdb.d
+    networks:
+      - lti_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lti_gateway_user -d lti_gateway"]
+      timeout: 20s
+      retries: 10
+      interval: 5s
+
+  # ============================================
+  # Redis 缓存和队列
+  # ============================================
+  lti_gateway_redis:
+    image: redis:7-alpine
+    container_name: lti_gateway_redis
+    restart: unless-stopped
+    volumes:
+      - lti_gateway_redis_data:/data
+    networks:
+      - lti_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================
+  # LTI Gateway PHP-FPM 应用
+  # ============================================
+  lti_gateway_app:
+    build:
+      context: ./lti-gateway
+      dockerfile: Dockerfile
+    container_name: lti_gateway_app
+    restart: unless-stopped
+    environment:
+      APP_ENV: ${LTI_APP_ENV:-production}
+      APP_DEBUG: ${LTI_APP_DEBUG:-false}
+      APP_URL: ${LTI_APP_URL:-http://localhost:8081}
+      APP_KEY: ${LTI_APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: lti_gateway_db
+      DB_PORT: 5432
+      DB_DATABASE: ${LTI_DB_NAME:-lti_gateway}
+      DB_USERNAME: ${LTI_DB_USER:-lti_gateway_user}
+      DB_PASSWORD: ${LTI_DB_PASSWORD:-lti_gateway_password_123}
+      REDIS_HOST: lti_gateway_redis
+      REDIS_PORT: 6379
+      # 使用文件缓存和数据库队列（避免 Redis 连接问题）
+      CACHE_DRIVER: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: database
+      # Moodle 通过容器网络访问
+      MOODLE_BASE_URL: http://moodle:8080
+      MOODLE_WEBSERVICE_TOKEN: ${MOODLE_WEBSERVICE_TOKEN}
+    volumes:
+      - ./lti-gateway:/var/www/html
+      - lti_gateway_storage:/var/www/html/storage
+      - lti_gateway_cache:/var/www/html/bootstrap/cache
+    networks:
+      - lti_network
+      - moodle_moodle_network
+    depends_on:
+      lti_gateway_db:
+        condition: service_healthy
+      lti_gateway_redis:
+        condition: service_healthy
+
+  # ============================================
+  # Nginx 反向代理
+  # ============================================
+  lti_gateway_nginx:
+    image: nginx:alpine
+    container_name: lti_gateway_nginx
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./lti-gateway:/var/www/html
+      - ./lti-gateway/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - lti_gateway_logs:/var/log/nginx
+    networks:
+      - lti_network
+    depends_on:
+      - lti_gateway_app
+
+  # ============================================
+  # 队列工作进程 (异步处理用户创建)
+  # ============================================
+  lti_gateway_queue:
+    build:
+      context: ./lti-gateway
+      dockerfile: Dockerfile
+    container_name: lti_gateway_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "queue:work", "--sleep=3", "--tries=3", "--timeout=300"]
+    environment:
+      APP_ENV: ${LTI_APP_ENV:-production}
+      APP_DEBUG: ${LTI_APP_DEBUG:-false}
+      APP_KEY: ${LTI_APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: lti_gateway_db
+      DB_PORT: 5432
+      DB_DATABASE: ${LTI_DB_NAME:-lti_gateway}
+      DB_USERNAME: ${LTI_DB_USER:-lti_gateway_user}
+      DB_PASSWORD: ${LTI_DB_PASSWORD:-lti_gateway_password_123}
+      REDIS_HOST: lti_gateway_redis
+      REDIS_PORT: 6379
+      # 使用文件缓存和数据库队列（避免 Redis 连接问题）
+      CACHE_DRIVER: file
+      QUEUE_CONNECTION: database
+      MOODLE_BASE_URL: http://moodle:8080
+      MOODLE_WEBSERVICE_TOKEN: ${MOODLE_WEBSERVICE_TOKEN}
+    volumes:
+      - ./lti-gateway:/var/www/html
+      - lti_gateway_storage:/var/www/html/storage
+      - lti_gateway_cache:/var/www/html/bootstrap/cache
+    networks:
+      - lti_network
+      - moodle_moodle_network
+    depends_on:
+      - lti_gateway_db
+      - lti_gateway_redis
+
+  # ============================================
+  # 定时任务调度器
+  # ============================================
+  lti_gateway_scheduler:
+    build:
+      context: ./lti-gateway
+      dockerfile: Dockerfile
+    container_name: lti_gateway_scheduler
+    restart: unless-stopped
+    working_dir: /var/www/html
+    command: ["php", "artisan", "schedule:work"]
+    environment:
+      APP_ENV: ${LTI_APP_ENV:-production}
+      APP_DEBUG: ${LTI_APP_DEBUG:-false}
+      APP_KEY: ${LTI_APP_KEY}
+      DB_CONNECTION: pgsql
+      DB_HOST: lti_gateway_db
+      DB_PORT: 5432
+      DB_DATABASE: ${LTI_DB_NAME:-lti_gateway}
+      DB_USERNAME: ${LTI_DB_USER:-lti_gateway_user}
+      DB_PASSWORD: ${LTI_DB_PASSWORD:-lti_gateway_password_123}
+      REDIS_HOST: lti_gateway_redis
+      REDIS_PORT: 6379
+      # 使用文件缓存和数据库队列（避免 Redis 连接问题）
+      CACHE_DRIVER: file
+      QUEUE_CONNECTION: database
+    volumes:
+      - ./lti-gateway:/var/www/html
+      - lti_gateway_storage:/var/www/html/storage
+      - lti_gateway_cache:/var/www/html/bootstrap/cache
+    networks:
+      - lti_network
+    depends_on:
+      - lti_gateway_db
+      - lti_gateway_redis
+
+volumes:
+  lti_gateway_db_data:
+  lti_gateway_redis_data:
+  lti_gateway_storage:
+  lti_gateway_cache:
+  lti_gateway_logs:
+
+networks:
+  lti_network:
+    driver: bridge
+  moodle_moodle_network:
+    external: true

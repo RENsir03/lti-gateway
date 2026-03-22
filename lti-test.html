@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTI Gateway 测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .form-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 200px;
+            resize: vertical;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            display: none;
+        }
+        .status.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LTI Gateway 测试页面</h1>
+        
+        <div class="info">
+            <strong>测试信息：</strong><br>
+            学号：2024001001<br>
+            姓名：张三<br>
+            启动端点：http://localhost:8081/lti/launch/1
+        </div>
+
+        <form id="ltiForm" method="POST" action="http://localhost:8081/lti/launch/1">
+            <div class="form-group">
+                <label for="id_token">ID Token (JWT):</label>
+                <textarea id="id_token" name="id_token" readonly>eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6ImdhdGV3YXkta2V5LTEifQ.eyJpc3MiOiJodHRwczpcL1wvdGVzdC1wbGF0Zm9ybS5lZHUiLCJhdWQiOiJ0ZXN0LWNsaWVudC1pZCIsInN1YiI6InVzZXJfMjAyNDAwMTAwMSIsImV4cCI6MTc3NDE0ODk0MiwiaWF0IjoxNzc0MTQ4MzQyLCJub25jZSI6Ijk2YmQxMTgwMTQ1NzlhNjk1MmZkNTA1ZTUzODQwYzAyIiwiaHR0cHM6XC9cL3B1cmwuaW1zZ2xvYmFsLm9yZ1wvc3BlY1wvbHRpXC9jbGFpbVwvbWVzc2FnZV90eXBlIjoiTHRpUmVzb3VyY2VMaW5rUmVxdWVzdCIsImh0dHBzOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3NwZWNcL2x0aVwvY2xhaW1cL3ZlcnNpb24iOiIxLjMuMCIsImh0dHBzOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3NwZWNcL2x0aVwvY2xhaW1cL2RlcGxveW1lbnRfaWQiOm51bGwsImh0dHBzOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3NwZWNcL2x0aVwvY2xhaW1cL3RhcmdldF9saW5rX3VyaSI6Imh0dHA6XC9cL2xvY2FsaG9zdDo4MDgxXC9sdGlcL2xhdW5jaFwvMSIsImh0dHBzOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3NwZWNcL2x0aVwvY2xhaW1cL3Jlc291cmNlX2xpbmsiOnsiaWQiOiJyZXNvdXJjZS02NDU1IiwidGl0bGUiOiJcdTZkNGJcdThiZDVcdThiZmVcdTdhMGIiLCJkZXNjcmlwdGlvbiI6Ilx1OGZkOVx1NjYyZlx1NGUwMFx1NGUyYVx1NmQ0Ylx1OGJkNVx1OGJmZVx1N2EwYiJ9LCJodHRwczpcL1wvcHVybC5pbXNnbG9iYWwub3JnXC9zcGVjXC9sdGlcL2NsYWltXC9yb2xlcyI6WyJodHRwOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3ZvY2FiXC9saXNcL3YyXC9pbnN0aXR1dGlvblwvcGVyc29uI1N0dWRlbnQiLCJodHRwOlwvXC9wdXJsLmltc2dsb2JhbC5vcmdcL3ZvY2FiXC9saXNcL3YyXC9tZW1iZXJzaGlwI0xlYXJuZXIiXSwiaHR0cHM6XC9cL3B1cmwuaW1zZ2xvYmFsLm9yZ1wvc3BlY1wvbHRpXC9jbGFpbVwvY3VzdG9tIjp7InN0dWRlbnRfaWQiOiIyMDI0MDAxMDAxIiwiY291cnNlX2lkIjoiQ09VUlNFLTkyMCJ9LCJnaXZlbl9uYW1lIjoiXHU1ZjIwXHU0ZTA5IiwiZmFtaWx5X25hbWUiOiIiLCJuYW1lIjoiXHU1ZjIwXHU0ZTA5IiwiZW1haWwiOiIyMDI0MDAxMDAxQHRlc3QuZWR1IiwibGlzX3BlcnNvbl9zb3VyY2VkaWQiOiIyMDI0MDAxMDAxIn0.Rs7G7zbybWyi2OcdTt24kit6oByrD84WMhqd5sFa2QI1I1igS2-cUXOOIoQgvsrpcKc7vCZ08HRAdGGoNEea3gk-517nQt__yMR03X_AvabyftvicO8nftwS_IUh6_RbhPRbNDVSywkfNZY19uu0gjOD8yoAbdcAOOon5djWORLj9Tr_UwFt2lkl-maDRVqiJtbeBC1r9Raky7Wtbg1w2VN1-2O2Cbyg-9BLXU9lC8yxKT8KsmCHAgXRoePx_YJxbS47Mi1HBThC5feZQJfMraCLNQx4mY_CarwsFhscjy9N6tts9dBDkZDYlrxa_wgmT2aHJSRqLLlD2c6KNVG6CA</textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="state">State:</label>
+                <input type="text" id="state" name="state" value="test123" readonly>
+            </div>
+            
+            <button type="submit">启动 LTI</button>
+        </form>
+
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        document.getElementById('ltiForm').addEventListener('submit', function(e) {
+            document.getElementById('status').className = 'status';
+            document.getElementById('status').textContent = '正在发送请求...';
+            document.getElementById('status').style.display = 'block';
+        });
+    </script>
+</body>
+</html>
