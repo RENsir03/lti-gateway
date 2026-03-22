@@ -49,9 +49,9 @@ Route::prefix('metrics')->group(function () {
     Route::get('/prometheus', [MetricsController::class, 'prometheus']);
 });
 
-// API 文档重定向
+// API 文档重定向 - 注意：文件在 lti-gateway 子目录中
 Route::get('/docs', function () {
-    return redirect('https://github.com/RENsir03/lti-gateway/blob/main/docs/API.md');
+    return redirect('https://github.com/RENsir03/lti-gateway/blob/main/lti-gateway/docs/API.md');
 });
 
 // 操作日志 API - 直接在路由中实现
