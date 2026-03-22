@@ -300,7 +300,7 @@
             <button class="link" id="logsBtn" onclick="toggleLogs()">
                 <span id="logsBtnText">查看操作日志</span>
             </button>
-            <a href="https://github.com/RENsir03/lti-gateway" class="link" target="_blank">GitHub</a>
+            <a href="https://github.com/RENsir03/lti-gateway/tree/main/lti-gateway" class="link" target="_blank">GitHub</a>
         </div>
 
         <!-- 操作日志面板 -->
